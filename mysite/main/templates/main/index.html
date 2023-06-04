@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Выберите маршрут</title>
+    <style>
+        body {
+            background-color: #f8f8f8;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .card {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            margin: 10px;
+            padding: 10px;
+            text-align: center;
+            transition: all 0.2s ease-in-out;
+            width: 300px;
+        }
+
+        .card:hover {
+            background-color: #f9f9f9;
+        }
+
+        form {
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        input[type=submit] {
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 3px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.2s ease-in-out;
+        }
+
+        input[type=submit]:hover {
+            background-color: #3e8e41;
+        }
+    </style>
+</head>
+<body>
+    <h1>Выберите маршрут на остановке "{{station}}"</h1>
+    <div id="cards">
+        {% for key in data %}
+        <div class="card" data-route-id="{{key}}">
+            <h2> Маршрут № {{key}}</h2>
+        </div>
+        {% empty %}
+        <p>Список маршрутов пуст</p>
+        {% endfor %}
+    </div>
+    <form id="form" action="{% url 'main:route' %}">
+        <input type="hidden" id="route" name="route">
+    </form>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        let cards = document.querySelectorAll('.card');
+        let form = document.getElementById('form');
+        let routeInput = document.getElementById('route');
+
+        cards.forEach(card => {
+          card.addEventListener('click', () => {
+            let routeId = card.getAttribute('data-route-id');
+            let station = "{{station}}";
+            let currentDate = new Date();
+
+            let day = currentDate.getDate();
+            let month = currentDate.getMonth() + 1; // Месяцы в JavaScript нумеруются с 0, поэтому добавляем 1
+            let year = currentDate.getFullYear();
+
+            let hours = currentDate.getHours();
+            let minutes = currentDate.getMinutes();
+            let seconds = currentDate.getSeconds();
+
+            let formattedDate = day + '/' + month + '/' + year;
+            let formattedTime = hours + ':' + minutes + ':' + seconds;
+
+            console.log('Дата: ' + formattedDate);
+            console.log('Время: ' + formattedTime);
+            let confirmed = confirm(`Вы выбрали маршрут №${routeId} на остановке ${station}. Дата ${formattedDate}. Время ${formattedTime} Подтверждаете выбор?`);
+            if (confirmed) {
+                routeInput.value = routeId;
+                confirmAndCreateRecord(confirmed)
+            }
+            function goBack() {
+          window.history.back();
+            }
+              function confirmAndCreateRecord(confirmed) {
+                if (confirmed) {
+                    let myFieldValue = routeId + "#" + station; // замените на свой код для получения значения поля
+                    $.ajax({
+                        url: '/create_record/',
+                        type: 'POST',
+                        data: {my_field: myFieldValue, csrfmiddlewaretoken: '{{ csrf_token }}'},
+                        success: function(data) {
+                            if (data.success) {
+                                alert('Заявка на перевозку успешно создана!');
+                                location.reload();
+                            } else {
+                                alert('Ошибка при создании записи.');
+                            }
+                        },
+                        error: function() {
+                            alert('Произошла ошибка при отправке запроса.');
+                        }
+                    });
+            }
+        }
+  });
+});
+
+    </script>
+</body>
+</html>
